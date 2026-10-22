@@ -1,7 +1,7 @@
 # VisionFace AI — Face Detection Application
 
-[![Assignment 2](https://img.shields.io/badge/Assignment-2%20Submission-blue.svg)](https://github.com/hebinjoseph/face-detection-app)
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-brightgreen.svg)](https://hebinjoseph.github.io/face-detection-app/)
+[![Assignment 2](https://img.shields.io/badge/Assignment-2%20Submission-blue.svg)](https://github.com/hebinjoseph/FaceDetectionApp)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-brightgreen.svg)](https://hebinjoseph.github.io/FaceDetectionApp/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 
@@ -13,8 +13,8 @@ A full-stack, cross-platform **Face Detection Application** developed for **Assi
 
 | Item | URL |
 | :--- | :--- |
-| **Live Hosted Application** | [https://hebinjoseph.github.io/face-detection-app/](https://hebinjoseph.github.io/face-detection-app/) |
-| **GitHub Repository** | [https://github.com/hebinjoseph/face-detection-app](https://github.com/hebinjoseph/face-detection-app) |
+| **Live Hosted Application** | [https://hebinjoseph.github.io/FaceDetectionApp/](https://hebinjoseph.github.io/FaceDetectionApp/) |
+| **GitHub Repository** | [https://github.com/hebinjoseph/FaceDetectionApp](https://github.com/hebinjoseph/FaceDetectionApp) |
 | **Student Name** | Hebin Joseph |
 | **Submission Deadline** | Friday, 23rd October 2026 |
 
@@ -127,7 +127,7 @@ streamlit run python/streamlit_app.py
 ## 🌐 Online Deployment Instructions
 
 ### Method 1: GitHub Pages (Recommended — 2 Minutes)
-1. Push this repository to GitHub under your account (`https://github.com/hebinjoseph/face-detection-app`).
+1. Push this repository to GitHub under your account (`https://github.com/hebinjoseph/FaceDetectionApp`).
 2. Go to your repository **Settings** tab.
 3. In the left navigation, click **Pages** (under "Code and automation").
 4. Under **Build and deployment**:
@@ -135,7 +135,7 @@ streamlit run python/streamlit_app.py
    - **Branch**: Select `main` (or `master`) and folder `/ (root)`
    - Click **Save**.
 5. Within 60 seconds, your application will be live at:
-   `https://hebinjoseph.github.io/face-detection-app/`
+   `https://hebinjoseph.github.io/FaceDetectionApp/`
 
 ---
 
