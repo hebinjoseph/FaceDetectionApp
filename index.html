@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VisionFace AI — Face Detection Application | Assignment 2</title>
+  <meta name="description" content="Assignment 2: Real-time and image-based Face Detection web application powered by MediaPipe BlazeFace AI and OpenCV." />
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <!-- MediaPipe Face Detection & Camera Utils -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/face_detection.js" crossorigin="anonymous"></script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body class="text-slate-100 min-h-screen">
+
+  <!-- Top Header / Navigation -->
+  <header class="border-b border-slate-800/80 bg-slate-900/70 backdrop-blur-md sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      
+      <!-- Logo and Project Info -->
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+          <i class="fa-solid fa-face-smile text-white text-lg"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="font-extrabold text-lg tracking-tight bg-gradient-to-r from-white via-slate-200 to-indigo-300 bg-clip-text text-transparent">VisionFace AI</h1>
+            <span class="text-xs px-2 py-0.5 rounded-full font-medium badge-indigo">Assignment 2</span>
+          </div>
+          <p class="text-xs text-slate-400">Deep Learning & Computer Vision Face Detection</p>
+        </div>
+      </div>
+
+      <!-- Action Buttons & Repo link -->
+      <div class="flex items-center gap-3">
+        <a id="github-repo-link" href="https://github.com/hebinjoseph/face-detection-app" target="_blank" rel="noopener noreferrer" 
+           class="inline-flex items-center gap-2 text-xs sm:text-sm px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
+          <i class="fa-brands fa-github text-base"></i>
+          <span class="hidden sm:inline">GitHub Repository</span>
+        </a>
+        <div class="hidden md:flex items-center gap-2 text-xs font-mono text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>Model: BlazeFace AI</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+    
+    <!-- Hero / Assignment Banner -->
+    <div class="glass-panel p-6 sm:p-8 mb-8 relative overflow-hidden">
+      <div class="absolute -right-16 -top-16 w-64 h-64 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="max-w-3xl">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold badge-indigo mb-3">
+          <i class="fa-solid fa-graduation-cap"></i> Academic Submission • Computer Vision
+        </div>
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight mb-2">
+          High-Performance Face Detection & Keypoint Localization
+        </h2>
+        <p class="text-slate-300 text-sm sm:text-base leading-relaxed">
+          Developed to fulfill all requirements of <strong>Assignment 2</strong>. Featuring real-time 30+ FPS webcam facial localization, 6-point biometric landmark tracking, confidence filtering, bounding box coordinate extraction, and batch image analysis.
+        </p>
+      </div>
+
+      <!-- Live Navigation Tabs -->
+      <div class="flex flex-wrap items-center gap-2 mt-6 pt-4 border-t border-slate-800">
+        <button id="tab-webcam" class="tab-btn active" onclick="switchTab('webcam')">
+          <i class="fa-solid fa-video"></i>
+          <span>Live Camera</span>
+        </button>
+        <button id="tab-upload" class="tab-btn" onclick="switchTab('upload')">
+          <i class="fa-solid fa-cloud-arrow-up"></i>
+          <span>Upload & Analyze</span>
+        </button>
+        <button id="tab-theory" class="tab-btn" onclick="switchTab('theory')">
+          <i class="fa-solid fa-book-open"></i>
+          <span>Theory & Architecture</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 1: LIVE WEBCAM ==================== -->
+    <section id="section-webcam" class="space-y-6">
+      
+      <!-- Top Metrics Dashboard -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div class="metric-box">
+          <div id="cam-faces-count" class="metric-val">0</div>
+          <div class="metric-label">Faces Detected</div>
+        </div>
+        <div class="metric-box">
+          <div id="cam-fps" class="metric-val">--</div>
+          <div class="metric-label">FPS (Processing)</div>
+        </div>
+        <div class="metric-box">
+          <div id="cam-latency" class="metric-val">--</div>
+          <div class="metric-label">Inference Latency</div>
+        </div>
+        <div class="metric-box">
+          <div id="cam-confidence" class="metric-val">--%</div>
+          <div class="metric-label">Top Confidence</div>
+        </div>
+      </div>
+
+      <!-- Camera Viewport & Controls Layout -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        
+        <!-- Video Feed Stage (Left 2 cols) -->
+        <div class="lg:col-span-2 glass-panel p-4 flex flex-col items-center">
+          
+          <div class="viewport-container" id="camera-viewport-wrap">
+            
+            <!-- Video & Canvas Element -->
+            <video id="webcam-video" playsinline></video>
+            <canvas id="webcam-canvas"></canvas>
+
+            <!-- Camera Idle Placeholder -->
+            <div id="camera-placeholder" class="camera-placeholder">
+              <div class="w-16 h-16 rounded-full bg-slate-800/80 border border-slate-700 flex items-center justify-center text-slate-400 mb-4 shadow-inner">
+                <i class="fa-solid fa-camera text-2xl"></i>
+              </div>
+              <h3 class="text-lg font-bold text-white mb-1">Camera is Stopped</h3>
+              <p class="text-xs text-slate-400 max-w-sm mb-4">Click "Start Camera" below to activate real-time face detection using your device's webcam.</p>
+              <button onclick="startWebcam()" class="btn btn-primary">
+                <i class="fa-solid fa-play"></i> Start Camera
+              </button>
+            </div>
+
+            <!-- In-viewport HUD overlay -->
+            <div class="hud-overlay" id="cam-hud" style="display: none;">
+              <div class="hud-badge">
+                <span class="status-dot active"></span>
+                <span id="cam-hud-status">LIVE AI DETECTION</span>
+              </div>
+              <div class="hud-badge">
+                <i class="fa-solid fa-bolt text-amber-400"></i>
+                <span id="cam-hud-info">MediaPipe BlazeFace</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Action Buttons Below Video -->
+          <div class="flex flex-wrap items-center justify-center gap-3 mt-4 w-full">
+            <button id="btn-start-cam" onclick="startWebcam()" class="btn btn-primary">
+              <i class="fa-solid fa-video"></i> Start Camera
+            </button>
+            <button id="btn-stop-cam" onclick="stopWebcam()" class="btn btn-danger" disabled>
+              <i class="fa-solid fa-video-slash"></i> Stop Camera
+            </button>
+            <button id="btn-snapshot" onclick="takeSnapshot()" class="btn btn-secondary" disabled>
+              <i class="fa-solid fa-camera-retro"></i> Snapshot
+            </button>
+            <button id="btn-flip-cam" onclick="toggleCameraMirror()" class="btn btn-secondary" title="Toggle Mirror">
+              <i class="fa-solid fa-arrows-rotate"></i> Flip Mirror
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Controls & Settings Panel (Right 1 col) -->
+        <div class="space-y-6">
+          
+          <!-- Detection Configuration Card -->
+          <div class="glass-panel p-5">
+            <h3 class="text-base font-bold text-white flex items-center gap-2 mb-4">
+              <i class="fa-solid fa-sliders text-indigo-400"></i> Detection Controls
+            </h3>
+            
+            <div class="space-y-4 text-sm">
+              <!-- Threshold Slider -->
+              <div>
+                <div class="flex justify-between items-center mb-1">
+                  <label for="conf-slider" class="text-slate-300 font-medium text-xs">Min Confidence Threshold</label>
+                  <span id="conf-val" class="font-mono text-indigo-400 text-xs font-semibold">50%</span>
+                </div>
+                <input id="conf-slider" type="range" min="10" max="95" value="50" step="5" class="w-full" oninput="updateConfidence(this.value)" />
+                <p class="text-[11px] text-slate-500 mt-1">Lower values detect faint/distant faces; higher values reduce false positives.</p>
+              </div>
+
+              <!-- Visual Toggles -->
+              <div class="pt-2 border-t border-slate-800 space-y-2">
+                <label class="flex items-center gap-2.5 cursor-pointer select-none">
+                  <input id="chk-landmarks" type="checkbox" checked onchange="toggleLandmarks(this.checked)" class="rounded bg-slate-800 border-slate-700 text-indigo-600 focus:ring-indigo-500 w-4 h-4" />
+                  <span class="text-slate-300 text-xs">Show Facial Landmarks (Eyes, Nose, Mouth)</span>
+                </label>
+                <label class="flex items-center gap-2.5 cursor-pointer select-none">
+                  <input id="chk-score" type="checkbox" checked onchange="toggleScoreBadge(this.checked)" class="rounded bg-slate-800 border-slate-700 text-indigo-600 focus:ring-indigo-500 w-4 h-4" />
+                  <span class="text-slate-300 text-xs">Display Confidence Score Overlay</span>
+                </label>
+                <label class="flex items-center gap-2.5 cursor-pointer select-none">
+                  <input id="chk-coords" type="checkbox" checked onchange="toggleCoords(this.checked)" class="rounded bg-slate-800 border-slate-700 text-indigo-600 focus:ring-indigo-500 w-4 h-4" />
+                  <span class="text-slate-300 text-xs">Display Bounding Box Coordinates</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Snapshot Preview Modal / Card -->
+          <div id="snapshot-card" class="glass-panel p-5 hidden">
+            <h3 class="text-base font-bold text-white flex items-center justify-between mb-3">
+              <span class="flex items-center gap-2">
+                <i class="fa-solid fa-image text-emerald-400"></i> Captured Snapshot
+              </span>
+              <button onclick="closeSnapshot()" class="text-slate-400 hover:text-white text-xs">
+                <i class="fa-solid fa-xmark text-sm"></i>
+              </button>
+            </h3>
+            <img id="snapshot-img" alt="Captured Frame" class="rounded-lg w-full border border-slate-700 mb-3 shadow-md" />
+            <div class="flex gap-2">
+              <a id="snapshot-download" download="detected_face_snapshot.jpg" class="btn btn-primary w-full text-xs py-2">
+                <i class="fa-solid fa-download"></i> Download Snapshot
+              </a>
+            </div>
+          </div>
+
+          <!-- Hardware & Execution Info -->
+          <div class="glass-panel p-4 text-xs text-slate-400 space-y-2">
+            <div class="font-semibold text-slate-300 flex items-center gap-2">
+              <i class="fa-solid fa-microchip text-indigo-400"></i> Runtime Environment
+            </div>
+            <div class="flex justify-between">
+              <span>Acceleration:</span>
+              <span class="text-slate-200 font-mono">WebAssembly / WebGL</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Model Backbone:</span>
+              <span class="text-slate-200 font-mono">BlazeFace MobileNet SSD</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Input Resolution:</span>
+              <span id="cam-resolution" class="text-slate-200 font-mono">-- x --</span>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== TAB 2: IMAGE UPLOAD & ANALYSIS ==================== -->
+    <section id="section-upload" class="space-y-6 hidden">
+      
+      <!-- Top Upload & Sample Selector -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Dropzone Area (Left 2 cols) -->
+        <div class="lg:col-span-2 glass-panel p-6">
+          <h3 class="text-lg font-bold text-white mb-2 flex items-center gap-2">
+            <i class="fa-solid fa-cloud-arrow-up text-indigo-400"></i> Upload Image for Detection
+          </h3>
+          <p class="text-xs text-slate-400 mb-4">Upload any JPG, PNG, or WebP photo to detect faces, localize facial landmarks, and inspect cropped face previews.</p>
+
+          <!-- Drag and drop zone -->
+          <div id="drop-zone" class="dropzone" onclick="document.getElementById('file-input').click()">
+            <input type="file" id="file-input" accept="image/*" class="hidden" onchange="handleFileSelect(event)" />
+            <div class="w-14 h-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mx-auto mb-3">
+              <i class="fa-solid fa-image text-2xl"></i>
+            </div>
+            <p class="font-semibold text-slate-200 text-sm mb-1">Click to browse or drag and drop an image here</p>
+            <p class="text-xs text-slate-500">Supports high-res portrait, group, and selfie photographs</p>
+          </div>
+
+          <!-- Quick Samples Bar -->
+          <div class="mt-4 pt-4 border-t border-slate-800 flex flex-wrap items-center gap-3">
+            <span class="text-xs text-slate-400 font-medium">Quick Test Samples:</span>
+            <button onclick="loadSampleImage('sample1.jpg')" class="px-3 py-1 rounded-lg text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
+              <i class="fa-solid fa-user mr-1 text-indigo-400"></i> Single Portrait
+            </button>
+            <button onclick="loadSampleImage('sample2.jpg')" class="px-3 py-1 rounded-lg text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
+              <i class="fa-solid fa-camera mr-1 text-emerald-400"></i> Close-up Face
+            </button>
+            <button onclick="loadSampleImage('sample3.jpg')" class="px-3 py-1 rounded-lg text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
+              <i class="fa-solid fa-users mr-1 text-amber-400"></i> Group Photo
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Detection Summary Card (Right 1 col) -->
+        <div class="glass-panel p-6 flex flex-col justify-between">
+          <div>
+            <h3 class="text-base font-bold text-white mb-3 flex items-center gap-2">
+              <i class="fa-solid fa-chart-pie text-emerald-400"></i> Analysis Summary
+            </h3>
+            
+            <div class="space-y-3">
+              <div class="metric-box py-3">
+                <div id="upload-face-count" class="metric-val text-2xl">0</div>
+                <div class="metric-label">Detected Faces</div>
+              </div>
+              <div class="glass-panel-subtle p-3 space-y-1.5 text-xs text-slate-300">
+                <div class="flex justify-between">
+                  <span>Image Dimensions:</span>
+                  <span id="upload-img-res" class="font-mono text-slate-100">-- x --</span>
+                </div>
+                <div class="flex justify-between">
+                  <span>Processing Time:</span>
+                  <span id="upload-time" class="font-mono text-emerald-400">-- ms</span>
+                </div>
+                <div class="flex justify-between">
+                  <span>Avg Confidence:</span>
+                  <span id="upload-avg-conf" class="font-mono text-indigo-300">--%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-4 pt-4 border-t border-slate-800">
+            <button id="btn-download-annotated" onclick="downloadAnnotatedImage()" class="btn btn-primary w-full text-xs" disabled>
+              <i class="fa-solid fa-download"></i> Download Annotated Result
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Annotated Result Canvas Display -->
+      <div class="glass-panel p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-base font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-draw-polygon text-indigo-400"></i> Detection Visualization
+          </h3>
+          <span id="canvas-status" class="text-xs text-slate-400">No image loaded yet</span>
+        </div>
+
+        <div class="relative w-full overflow-hidden rounded-xl bg-slate-950 flex items-center justify-center border border-slate-800 min-h-[340px]">
+          <canvas id="upload-canvas" class="max-w-full max-h-[600px] h-auto object-contain"></canvas>
+          <div id="upload-placeholder" class="text-center p-8 text-slate-500">
+            <i class="fa-regular fa-image text-4xl mb-3"></i>
+            <p class="text-sm">Select an image above or click a quick sample to view face detection.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cropped Faces Gallery -->
+      <div class="glass-panel p-5">
+        <h3 class="text-base font-bold text-white mb-2 flex items-center gap-2">
+          <i class="fa-solid fa-crop text-amber-400"></i> Individual Cropped Faces
+        </h3>
+        <p class="text-xs text-slate-400 mb-4">Each isolated facial region extracted from the detected bounding box coordinates:</p>
+
+        <div id="faces-gallery" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          <div class="col-span-full py-8 text-center text-xs text-slate-500">
+            Detected face thumbnails will appear here after running detection.
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ==================== TAB 3: THEORY & DOCUMENTATION ==================== -->
+    <section id="section-theory" class="space-y-6 hidden">
+      
+      <div class="glass-panel p-6 sm:p-8 space-y-6">
+        
+        <div>
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold badge-emerald mb-2">
+            <i class="fa-solid fa-atom"></i> Academic Theory & Methodology
+          </div>
+          <h2 class="text-2xl font-bold text-white">How Face Detection Works: Computer Vision Fundamentals</h2>
+          <p class="text-slate-300 text-sm mt-1">A technical breakdown of modern and classical facial localization algorithms.</p>
+        </div>
+
+        <!-- Comparative Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          
+          <!-- Classical: Viola-Jones -->
+          <div class="glass-panel-subtle p-5 border border-slate-700/60 rounded-xl space-y-3">
+            <div class="flex items-center justify-between">
+              <h3 class="font-bold text-base text-amber-300">1. Viola-Jones Haar Cascade (Classical)</h3>
+              <span class="text-xs px-2 py-0.5 rounded badge-amber">OpenCV Native</span>
+            </div>
+            <p class="text-xs text-slate-300 leading-relaxed">
+              Proposed by Paul Viola and Michael Jones in 2001, this revolutionized real-time face detection prior to modern GPUs.
+            </p>
+            <ul class="text-xs text-slate-400 space-y-2 list-disc list-inside">
+              <li><strong class="text-slate-200">Haar-like Features:</strong> Rectangular pixel difference patterns that mimic facial features (e.g., eye regions are darker than cheekbones).</li>
+              <li><strong class="text-slate-200">Integral Image:</strong> Constant-time \(O(1)\) area summation technique allowing rapid feature calculation across arbitrary window scales.</li>
+              <li><strong class="text-slate-200">AdaBoost:</strong> Selects the top critical features from tens of thousands of candidates to form weak classifiers.</li>
+              <li><strong class="text-slate-200">Cascade Architecture:</strong> Rejects non-face background windows early in the pipeline, optimizing compute efficiency.</li>
+            </ul>
+          </div>
+
+          <!-- Modern: BlazeFace Deep Learning -->
+          <div class="glass-panel-subtle p-5 border border-slate-700/60 rounded-xl space-y-3">
+            <div class="flex items-center justify-between">
+              <h3 class="font-bold text-base text-indigo-300">2. BlazeFace & SSD (Modern Deep Learning)</h3>
+              <span class="text-xs px-2 py-0.5 rounded badge-indigo">MediaPipe / This App</span>
+            </div>
+            <p class="text-xs text-slate-300 leading-relaxed">
+              Google's sub-millisecond neural network specifically architected for mobile and browser edge computing.
+            </p>
+            <ul class="text-xs text-slate-400 space-y-2 list-disc list-inside">
+              <li><strong class="text-slate-200">Single Shot Detector (SSD):</strong> Evaluates image feature maps in a single neural forward pass rather than sliding multi-scale windows.</li>
+              <li><strong class="text-slate-200">Modified Convolution Kernels:</strong> Employs 5x5 depthwise separable convolutions to expand receptive field while maintaining low floating-point operations (FLOPs).</li>
+              <li><strong class="text-slate-200">6 3D Facial Landmarks:</strong> Predicts eye centers, nose tip, mouth center, and ear tragions alongside 2D bounding boxes.</li>
+              <li><strong class="text-slate-200">Non-Maximum Suppression (NMS):</strong> Merges overlapping candidate bounding boxes based on Intersection-over-Union (IoU) metrics.</li>
+            </ul>
+          </div>
+
+        </div>
+
+        <!-- Python CLI & Backend Implementation details -->
+        <div class="glass-panel-subtle p-5 rounded-xl border border-slate-700/60 space-y-3">
+          <h3 class="font-bold text-base text-white flex items-center gap-2">
+            <i class="fa-brands fa-python text-emerald-400 text-lg"></i> Python & OpenCV Standalone Implementation Included
+          </h3>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            In addition to this web deployment, this repository provides complete Python source code for command-line and Streamlit execution in <code class="text-indigo-300 font-mono">python/</code>:
+          </p>
+          <div class="bg-slate-950 p-4 rounded-lg font-mono text-xs text-slate-300 overflow-x-auto border border-slate-800">
+            <span class="text-slate-500"># 1. Run standalone OpenCV face detection CLI script</span><br/>
+            <span class="text-emerald-400">python</span> python/detect_faces.py --image assets/samples/sample1.jpg<br/><br/>
+            <span class="text-slate-500"># 2. Run real-time webcam detection with OpenCV</span><br/>
+            <span class="text-emerald-400">python</span> python/detect_faces.py --webcam<br/><br/>
+            <span class="text-slate-500"># 3. Launch interactive Python Streamlit application</span><br/>
+            <span class="text-emerald-400">streamlit run</span> python/streamlit_app.py
+          </div>
+        </div>
+
+        <!-- Mathematical Foundations -->
+        <div class="glass-panel-subtle p-5 rounded-xl border border-slate-700/60 space-y-3">
+          <h3 class="font-bold text-base text-white flex items-center gap-2">
+            <i class="fa-solid fa-square-root-variable text-indigo-400"></i> Mathematical Metric: Intersection over Union (IoU)
+          </h3>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            During face localization, candidate bounding boxes \(B_1\) and \(B_2\) are evaluated using the Jaccard Index (IoU) to filter redundant detections:
+          </p>
+          <div class="p-3 bg-slate-950 rounded-lg text-center font-mono text-xs text-indigo-300 border border-slate-800">
+            IoU = Area(B_1 ∩ B_2) / Area(B_1 ∪ B_2)
+          </div>
+          <p class="text-[11px] text-slate-400">
+            Detections exceeding an IoU overlap threshold (typically 0.45) with a higher-confidence candidate are suppressed during the Non-Maximum Suppression (NMS) stage.
+          </p>
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Global Footer -->
+  <footer class="border-t border-slate-800/80 bg-slate-950/80 backdrop-blur-md py-6 mt-12 text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div>
+        <p class="text-slate-400 font-medium">Assignment 2: Face Detection Application</p>
+        <p class="text-slate-500">Submitted by: Hebin Joseph • Deadline: Friday, 23rd October 2026</p>
+      </div>
+      <div class="flex items-center gap-4">
+        <a href="#section-theory" onclick="switchTab('theory')" class="hover:text-indigo-400 transition">Technical Docs</a>
+        <span>•</span>
+        <a href="https://github.com/hebinjoseph/face-detection-app" target="_blank" class="hover:text-indigo-400 transition">GitHub Repo</a>
+        <span>•</span>
+        <span class="text-emerald-500 flex items-center gap-1.5">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Live Online
+        </span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Main Application Logic -->
+  <script src="js/app.js"></script>
+</body>
+</html>
